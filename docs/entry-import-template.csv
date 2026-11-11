@@ -1,0 +1,7 @@
+id,type,title,date,summary,details,decision_text,rationale,impact,reversibility,why_one_way,how_decided,decider_email,involved_emails,effective_date,team,affected_teams,tags,related,links
+OLD-1,decision,Meeting-free Fridays,2024-04-30,,Too many meetings left little time for focused work.,"Fridays are free of internal meetings:
+- no recurring meetings
+- urgent topics go to chat",Focused time matters more than another sync.,medium,two_way,,role_decision,decider@example.org,"one@example.org, two@example.org",2024-05-03,,,,,https://example.org/old-log/1
+OLD-2,update,New team calendar,30.05.2024,All team events are now in one shared calendar.,"Subscribe to it from the intranet start page.
+
+Questions go to the IT help channel.",,,small,,,,,,,,,,OLD-1,
