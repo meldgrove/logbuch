@@ -22,13 +22,25 @@ function enforce(check: Check) {
   if (!check.ok) throw new EntryError(check.forbidden ? "forbidden" : "invalid", check.reason ?? "This is not possible.");
 }
 
+/**
+ * Serializes invitations and changes to access and admin rights, so checks
+ * that span people (a known email, the last admin) see each other's writes.
+ * Taken first, before any row lock. 7_261_001 and 7_261_002 are the directory
+ * sync and first logins.
+ */
+const PEOPLE_LOCK_KEY = 7_261_003;
+
+async function lockPeople(tx: Transaction) {
+  await tx.execute(sql`select pg_advisory_xact_lock(${PEOPLE_LOCK_KEY})`);
+}
+
 async function lockPerson(tx: Transaction, personId: string) {
   const [current] = await tx.select().from(person).where(eq(person.id, personId)).for("update");
   if (!current) throw new EntryError("not_found", "This person does not exist.");
   return current;
 }
 
-/** What `actor` may change about a locked person. */
+/** What `actor` may change about a locked person; the admin count holds under `lockPeople`. */
 async function changesOf(tx: Transaction, directory: DirectoryRef, actor: Actor, current: typeof person.$inferSelect) {
   const [admins] = await tx
     .select({ value: count() })
@@ -50,6 +62,7 @@ async function assertActiveTeam(tx: Transaction, teamId: string | null) {
 export async function invitePerson(db: Database, directory: DirectoryRef, actor: Actor, input: InvitePersonInput, now: Date = new Date()) {
   enforce(directoryChange(directory, actor));
   return db.transaction(async (tx) => {
+    await lockPeople(tx);
     const [existing] = await tx
       .select({ id: person.id, hasAccess: person.hasAccess })
       .from(person)
@@ -122,6 +135,7 @@ export async function setPersonAccess(
 ) {
   enforce(directoryChange(directory, actor));
   await db.transaction(async (tx) => {
+    await lockPeople(tx);
     const current = await lockPerson(tx, personId);
     if (current.hasAccess === hasAccess) return;
     enforce((await changesOf(tx, directory, actor, current)).access);
@@ -149,6 +163,7 @@ export async function setPersonAdmin(
 ) {
   enforce(directoryChange(directory, actor));
   await db.transaction(async (tx) => {
+    await lockPeople(tx);
     const current = await lockPerson(tx, personId);
     if (current.isAdmin === isAdmin) return;
     enforce((await changesOf(tx, directory, actor, current)).admin);

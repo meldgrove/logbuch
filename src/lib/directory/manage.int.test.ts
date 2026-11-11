@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { connectTestDatabase } from "../../../tests/integration/db";
 import { seedDirectory } from "../../../tests/integration/seed";
@@ -43,6 +43,38 @@ async function rejection(promise: Promise<unknown>) {
   );
   expect(error).toBeInstanceOf(EntryError);
   return error as EntryError;
+}
+
+/**
+ * Starts `writes` together while another connection blocks inserts into the
+ * audit log: each write gets past its checks before any of them commits,
+ * unless the writes wait for each other.
+ */
+async function atTheSameTime(...writes: (() => Promise<unknown>)[]) {
+  const blocker = await testDb.pool.connect();
+  let settled: Promise<PromiseSettledResult<unknown>[]> | undefined;
+  try {
+    await blocker.query("begin");
+    await blocker.query("lock table audit_event in exclusive mode");
+    settled = Promise.allSettled(writes.map((write) => write()));
+    // pg_locks, not pg_stat_activity: that one stays the same within a transaction.
+    for (let attempt = 0; ; attempt++) {
+      const { rows } = await blocker.query<{ waiting: number }>(
+        "select count(*)::int as waiting from pg_locks where not granted and database = (select oid from pg_database where datname = current_database())",
+      );
+      if (rows[0]!.waiting >= writes.length) break;
+      if (attempt === 250) throw new Error("The writes did not reach their locks");
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+  } finally {
+    await blocker.query("commit");
+    blocker.release();
+  }
+  const results = await settled!;
+  return {
+    statuses: results.map((result) => result.status).sort(),
+    errors: results.flatMap((result) => (result.status === "rejected" ? [result.reason as unknown] : [])),
+  };
 }
 
 async function personRow(id: string) {
@@ -107,6 +139,29 @@ describe("people of the manual directory", () => {
     await setPersonAdmin(db, MANUAL, amy, seed.people.dan.id, true);
     await setPersonAdmin(db, MANUAL, amy, amy.personId, false);
     expect(await personRow(amy.personId)).toMatchObject({ isAdmin: false, hasAccess: true });
+  });
+
+  it("keeps an admin when both admins lose their rights at the same time", async () => {
+    await setPersonAdmin(db, MANUAL, amy, seed.people.dan.id, true);
+    const { statuses, errors } = await atTheSameTime(
+      () => setPersonAdmin(db, MANUAL, amy, seed.people.dan.id, false),
+      () => setPersonAdmin(db, MANUAL, amy, amy.personId, false),
+    );
+    expect(statuses).toEqual(["fulfilled", "rejected"]);
+    expect(errors[0]).toBeInstanceOf(EntryError);
+    expect((errors[0] as EntryError).message).toMatch(/last admin/);
+    const admins = await db.select().from(person).where(and(eq(person.isAdmin, true), eq(person.hasAccess, true)));
+    expect(admins).toHaveLength(1);
+  });
+
+  it("invites a person once when the same invitation arrives twice at the same time", async () => {
+    const { statuses, errors } = await atTheSameTime(
+      () => invitePerson(db, MANUAL, amy, invite()),
+      () => invitePerson(db, MANUAL, amy, invite()),
+    );
+    expect(statuses).toEqual(["fulfilled", "rejected"]);
+    expect((errors[0] as EntryError).fieldErrors.email).toBe("This person already has access.");
+    expect(await db.select().from(person).where(eq(person.workEmail, "new.person@example.org"))).toHaveLength(1);
   });
 
   it("makes only people with access admins", async () => {
