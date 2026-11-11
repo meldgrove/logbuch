@@ -74,7 +74,7 @@ channel too. Without either channel, Logbuch only shows tasks in the app.
 | `SMTP_URL` | none | `smtp://user:password@host:587` (STARTTLS) or `smtps://user:password@host:465`. Percent-encode special characters in the password |
 | `MAILERSEND_API_TOKEN` | none | MailerSend API token with email sending access. Use either SMTP or MailerSend |
 | `MAIL_FROM` | none | Sender address; required with SMTP or MailerSend |
-| `MAIL_FROM_NAME` | `Logbuch` | Sender name |
+| `MAIL_FROM_NAME` | `Meldgrove Logbuch` | Sender name |
 | `NOTIFICATION_TRANSPORT` | `live` in production, otherwise `console` | `console` only logs messages instead of sending them |
 
 ## Webhook (worker)

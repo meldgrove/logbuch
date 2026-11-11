@@ -1,6 +1,6 @@
 {
   "realm": "logbuch",
-  "displayName": "Logbuch (development)",
+  "displayName": "Meldgrove Logbuch (development)",
   "enabled": true,
   "sslRequired": "none",
   "registrationAllowed": false,
@@ -32,7 +32,7 @@
   "clients": [
     {
       "clientId": "logbuch",
-      "name": "Logbuch",
+      "name": "Meldgrove Logbuch",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,

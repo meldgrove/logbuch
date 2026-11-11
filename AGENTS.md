@@ -1,8 +1,8 @@
 # AGENTS.md
 
-Logbuch is a self-hosted log of decisions, updates, and learnings with a
-consent-based decision process. User documentation is in `docs/`;
-contributor setup is in `CONTRIBUTING.md`.
+Meldgrove Logbuch (Logbuch for short) is a self-hosted log of decisions,
+updates, and learnings with a consent-based decision process. User
+documentation is in `docs/`; contributor setup is in `CONTRIBUTING.md`.
 
 ## Stack
 
@@ -95,6 +95,10 @@ with shadcn/ui (Radix), pino, Vitest, Playwright.
   (`NODE_ENV`, `NEXT_RUNTIME`, `TZ`) are read directly. Document every new
   variable in `docs/configuration.md`.
 - UI text is English (US).
+- The product name is Meldgrove Logbuch: page titles, the login page, the
+  sidebar, and the email sender name use it; running text says Logbuch.
+  Technical names stay as they are (`LOGBUCH_*` variables, the `logbuch`
+  database and Keycloak realm, the `Logbuch-*` webhook headers).
 
 ## Commands
 

@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "Logbuch", template: "%s · Logbuch" },
+  title: { default: "Meldgrove Logbuch", template: "%s · Meldgrove Logbuch" },
   description: "Decisions, updates, and learnings of your organization in one place.",
   robots: { index: false, follow: false },
 };

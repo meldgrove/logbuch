@@ -1,8 +1,8 @@
-# Logbuch
+# Meldgrove Logbuch
 
-Logbuch is a self-hosted log of an organization's decisions, updates, and
-learnings, with a built-in, consent-based decision process that works without
-meetings.
+Meldgrove Logbuch (Logbuch for short) is a self-hosted log of an
+organization's decisions, updates, and learnings, with a built-in,
+consent-based decision process that works without meetings.
 
 - **One timeline** for updates, decisions, and learnings, with filters,
   full-text search, and a "Must read" pin for entries with a large impact.

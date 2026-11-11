@@ -141,7 +141,7 @@ describe("parseNotificationConfig", () => {
       SLACK_BOT_TOKEN: undefined,
       SMTP_URL: undefined,
       MAILERSEND_API_TOKEN: undefined,
-      MAIL_FROM_NAME: "Logbuch",
+      MAIL_FROM_NAME: "Meldgrove Logbuch",
     });
   });
 

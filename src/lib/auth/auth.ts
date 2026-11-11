@@ -45,7 +45,7 @@ function loginSubjectOf(context: object | null, userId: string): string | undefi
  */
 export function createAuth({ config, directory, db }: CreateAuthOptions) {
   return betterAuth({
-    appName: "Logbuch",
+    appName: "Meldgrove Logbuch",
     baseURL: config.LOGBUCH_BASE_URL,
     basePath: "/api/auth",
     secret: config.BETTER_AUTH_SECRET,

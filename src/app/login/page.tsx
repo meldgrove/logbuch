@@ -20,7 +20,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <Card className="w-full max-w-sm">
         <CardHeader className="justify-items-center text-center">
           <Logo className="mb-2 size-10" />
-          <h1 className="text-xl font-semibold">Logbuch</h1>
+          <h1 className="text-xl font-semibold">Meldgrove Logbuch</h1>
           <CardDescription>Decisions, updates, and learnings in one place.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

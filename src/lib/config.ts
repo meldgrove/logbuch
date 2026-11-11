@@ -61,7 +61,7 @@ function withDefaults(env: Env): Env {
     KEYCLOAK_CLIENT_SECRET: value("KEYCLOAK_CLIENT_SECRET") ?? value("OIDC_CLIENT_SECRET"),
     // Production sends for real; development and tests only log.
     NOTIFICATION_TRANSPORT: value("NOTIFICATION_TRANSPORT") ?? (env.NODE_ENV === "production" ? "live" : "console"),
-    MAIL_FROM_NAME: value("MAIL_FROM_NAME") ?? "Logbuch",
+    MAIL_FROM_NAME: value("MAIL_FROM_NAME") ?? "Meldgrove Logbuch",
   };
 }
 

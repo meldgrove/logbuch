@@ -88,7 +88,7 @@ export function AppSidebar({ user, isAdmin, taskCount }: AppSidebarProps) {
                     <Logo className="size-8" />
                   </span>
                   <span className="grid flex-1 text-left leading-tight">
-                    <span className="truncate font-semibold">Logbuch</span>
+                    <span className="truncate font-semibold">Meldgrove Logbuch</span>
                     <span className="truncate text-xs text-muted-foreground">Decisions and updates</span>
                   </span>
                 </Link>

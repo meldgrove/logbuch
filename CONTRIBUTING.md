@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for helping with Logbuch. Bug reports, ideas, and pull requests are
+Thank you for helping with Meldgrove Logbuch. Bug reports, ideas, and pull requests are
 welcome.
 
 ## Development setup
