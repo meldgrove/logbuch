@@ -1,0 +1,128 @@
+{
+  "realm": "logbuch",
+  "displayName": "Logbuch (development)",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "groups": [
+    {
+      "name": "logbuch",
+      "path": "/logbuch"
+    },
+    {
+      "name": "logbuch-admins",
+      "path": "/logbuch-admins"
+    },
+    {
+      "name": "teams",
+      "path": "/teams",
+      "subGroups": [
+        {
+          "name": "Engineering",
+          "path": "/teams/Engineering"
+        },
+        {
+          "name": "Operations",
+          "path": "/teams/Operations"
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "logbuch",
+      "name": "Logbuch",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "logbuch-dev-client-secret",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "frontchannelLogout": true,
+      "redirectUris": [
+        "http://localhost:3000/api/auth/callback/oidc",
+        "http://localhost:3001/api/auth/callback/oidc"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:3001"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3000/##http://localhost:3001/"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-logbuch",
+      "enabled": true,
+      "serviceAccountClientId": "logbuch",
+      "clientRoles": {
+        "realm-management": [
+          "view-users"
+        ]
+      }
+    },
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "username": "erika",
+      "email": "erika@example.test",
+      "emailVerified": true,
+      "firstName": "Erika",
+      "lastName": "Employee",
+      "enabled": true,
+      "groups": [
+        "/logbuch",
+        "/teams/Engineering"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "logbuch-dev",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "username": "adam",
+      "email": "adam@example.test",
+      "emailVerified": true,
+      "firstName": "Adam",
+      "lastName": "Admin",
+      "enabled": true,
+      "groups": [
+        "/logbuch-admins",
+        "/teams/Operations"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "logbuch-dev",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "username": "olga",
+      "email": "olga@example.test",
+      "emailVerified": true,
+      "firstName": "Olga",
+      "lastName": "Outsider",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "logbuch-dev",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

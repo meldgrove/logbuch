@@ -1,0 +1,33 @@
+# PostgreSQL 18 next to Logbuch, for a server without a PostgreSQL of its own.
+# Set these values in .env; COMPOSE_FILE makes every `docker compose` command
+# use both files:
+#
+#   COMPOSE_FILE=compose.yaml:compose.postgres.yaml
+#   POSTGRES_PASSWORD=<password>    # openssl rand -hex 32
+#   DATABASE_URL=postgres://logbuch:<password>@postgres:5432/logbuch
+#
+# The data lives in the volume postgres-data; back it up (docs/deployment.md).
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: logbuch
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: logbuch
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logbuch -d logbuch"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:

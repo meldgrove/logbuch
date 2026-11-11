@@ -1,0 +1,98 @@
+# Logbuch in production: one image, three services, and the PostgreSQL 18 in
+# DATABASE_URL.
+#
+#   cp .env.example .env    # then set the production values, see docs/configuration.md
+#   docker compose up -d --build
+#
+# Without a PostgreSQL of your own, add compose.postgres.yaml: it runs one
+# next to Logbuch (docs/deployment.md).
+#
+# Put a TLS-terminating reverse proxy in front of `web` (port 3000) and set
+# LOGBUCH_BASE_URL to its public URL. `migrate` runs once before `web` and
+# `worker` start. Platforms that run Compose files can use this file as it
+# is; set the variables in their environment view.
+# Local development uses compose.dev.yaml.
+
+x-app-environment: &app-environment
+  DATABASE_URL: ${DATABASE_URL:?}
+  TZ: ${TZ:-UTC}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+
+x-directory-environment: &directory-environment
+  LOGBUCH_BASE_URL: ${LOGBUCH_BASE_URL:?}
+  OIDC_ISSUER: ${OIDC_ISSUER:?}
+  OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:?}
+  OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?}
+  DIRECTORY: ${DIRECTORY:-manual}
+  INITIAL_ADMIN_EMAILS: ${INITIAL_ADMIN_EMAILS:-}
+  KEYCLOAK_ACCESS_GROUP: ${KEYCLOAK_ACCESS_GROUP:-}
+  KEYCLOAK_ADMIN_GROUP: ${KEYCLOAK_ADMIN_GROUP:-}
+  KEYCLOAK_TEAMS_GROUP: ${KEYCLOAK_TEAMS_GROUP:-}
+  KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-}
+  KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-}
+
+# Error reporting to Sentry; off without SENTRY_DSN.
+x-error-reporting-environment: &error-reporting-environment
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-}
+  SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+
+services:
+  migrate:
+    build: .
+    command: ["migrate"]
+    restart: "no"
+    environment:
+      <<: *app-environment
+
+  web:
+    build: .
+    command: ["web"]
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      <<: [*app-environment, *directory-environment, *error-reporting-environment]
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?}
+      OIDC_SCOPES: ${OIDC_SCOPES:-}
+      OIDC_TRUST_EMAIL: ${OIDC_TRUST_EMAIL:-}
+    healthcheck:
+      # Readiness: database reachable and migrations applied.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/-/readyz').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  worker:
+    build: .
+    command: ["worker"]
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: [*app-environment, *directory-environment, *error-reporting-environment]
+      # Each channel is off until it is configured.
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:-}
+      SLACK_CHANNEL_ID: ${SLACK_CHANNEL_ID:-}
+      SMTP_URL: ${SMTP_URL:-}
+      MAILERSEND_API_TOKEN: ${MAILERSEND_API_TOKEN:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-}
+      WEBHOOK_URL: ${WEBHOOK_URL:-}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-}
+    healthcheck:
+      # The worker refreshes its heartbeat file every 30 seconds.
+      test: ["CMD", "node", "dist/worker-healthcheck.mjs"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
