@@ -30,6 +30,9 @@ COPY --from=build --chown=node:node /app/public ./public
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/drizzle ./drizzle
 COPY --chown=node:node docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+# The release workflow sets the version; images built from source have none.
+ARG APP_VERSION=""
+ENV APP_VERSION=${APP_VERSION}
 USER node
 EXPOSE 3000
 ENTRYPOINT ["docker-entrypoint.sh"]

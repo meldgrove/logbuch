@@ -98,7 +98,7 @@ strings, or values from database queries. The browser sends nothing.
 |---|---|---|
 | `SENTRY_DSN` | none | The project's DSN (Client Key). Off without it |
 | `SENTRY_ENVIRONMENT` | `production` | Environment name shown in Sentry, e.g. `staging` |
-| `SENTRY_RELEASE` | none | Release name, e.g. the deployed commit SHA |
+| `SENTRY_RELEASE` | `logbuch@<APP_VERSION>` in release images, otherwise none | Release name, e.g. the deployed commit SHA |
 
 ## Time zone
 
@@ -114,5 +114,6 @@ date format is `DD.MM.YYYY`.
 | Variable | Default | Value |
 |---|---|---|
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `APP_VERSION` | the version in release images, otherwise none | Set by release images, not by operators. `/-/healthz` and Sentry report it |
 | `WORKER_HEARTBEAT_FILE` | `/tmp/logbuch-worker-heartbeat` | File the worker touches for its health check |
 | `MIGRATIONS_DIR` | `drizzle` | Folder with the SQL migrations |

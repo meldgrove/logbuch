@@ -159,8 +159,14 @@ const webhookSchema = z
     path: ["WEBHOOK_SECRET"],
   });
 
-/** Error reporting to Sentry: off until SENTRY_DSN is set. */
+/** The release version, e.g. "0.2.0". Release images set it; images built from source have none. */
+const versionSchema = z.object({
+  APP_VERSION: optional(z.string()),
+});
+
+/** Error reporting to Sentry: off until SENTRY_DSN is set. Without SENTRY_RELEASE, the release is named after APP_VERSION. */
 const errorReportingSchema = z.object({
+  ...versionSchema.shape,
   SENTRY_DSN: optional(httpUrl),
   SENTRY_ENVIRONMENT: optional(z.string()),
   SENTRY_RELEASE: optional(z.string()),
@@ -172,6 +178,7 @@ export type DirectoryConfig = z.infer<typeof directorySchema>;
 export type KeycloakDirectoryConfig = Extract<DirectoryConfig, { DIRECTORY: "keycloak" }>;
 export type NotificationConfig = z.infer<typeof notificationSchema>;
 export type WebhookConfig = z.infer<typeof webhookSchema>;
+export type VersionConfig = z.infer<typeof versionSchema>;
 export type ErrorReportingConfig = z.infer<typeof errorReportingSchema>;
 
 export class ConfigError extends Error {
@@ -208,6 +215,10 @@ export function parseWebhookConfig(env: Env = process.env): WebhookConfig {
   return parse(webhookSchema, env);
 }
 
+export function parseVersionConfig(env: Env = process.env): VersionConfig {
+  return parse(versionSchema, env);
+}
+
 export function parseErrorReportingConfig(env: Env = process.env): ErrorReportingConfig {
   return parse(errorReportingSchema, env);
 }
@@ -237,6 +248,7 @@ let authConfig: AuthConfig | undefined;
 let directoryConfig: DirectoryConfig | undefined;
 let notificationConfig: NotificationConfig | undefined;
 let webhookConfig: WebhookConfig | undefined;
+let versionConfig: VersionConfig | undefined;
 let errorReportingConfig: ErrorReportingConfig | undefined;
 
 export function getDatabaseConfig(): DatabaseConfig {
@@ -262,6 +274,11 @@ export function getNotificationConfig(): NotificationConfig {
 export function getWebhookConfig(): WebhookConfig {
   webhookConfig ??= parseWebhookConfig();
   return webhookConfig;
+}
+
+export function getVersionConfig(): VersionConfig {
+  versionConfig ??= parseVersionConfig();
+  return versionConfig;
 }
 
 export function getErrorReportingConfig(): ErrorReportingConfig {
