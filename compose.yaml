@@ -2,7 +2,11 @@
 # DATABASE_URL.
 #
 #   cp .env.example .env    # then set the production values, see docs/configuration.md
-#   docker compose up -d --build
+#   docker compose up -d
+#
+# LOGBUCH_VERSION in .env selects the release of ghcr.io/meldgrove/logbuch,
+# e.g. 0.1.0. To upgrade, read the release notes, change it, and run
+# `docker compose up -d` again.
 #
 # Without a PostgreSQL of your own, add compose.postgres.yaml: it runs one
 # next to Logbuch (docs/deployment.md).
@@ -12,6 +16,8 @@
 # `worker` start. Platforms that run Compose files can use this file as it
 # is; set the variables in their environment view.
 # Local development uses compose.dev.yaml.
+
+x-image: &image ghcr.io/meldgrove/logbuch:${LOGBUCH_VERSION:?set LOGBUCH_VERSION in .env to a release, e.g. 0.1.0}
 
 x-app-environment: &app-environment
   DATABASE_URL: ${DATABASE_URL:?}
@@ -39,14 +45,14 @@ x-error-reporting-environment: &error-reporting-environment
 
 services:
   migrate:
-    build: .
+    image: *image
     command: ["migrate"]
     restart: "no"
     environment:
       <<: *app-environment
 
   web:
-    build: .
+    image: *image
     command: ["web"]
     restart: unless-stopped
     depends_on:
@@ -72,7 +78,7 @@ services:
       start_period: 20s
 
   worker:
-    build: .
+    image: *image
     command: ["worker"]
     restart: unless-stopped
     depends_on:

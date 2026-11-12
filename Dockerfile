@@ -16,6 +16,10 @@ COPY . .
 RUN npm run build
 
 FROM base AS runtime
+LABEL org.opencontainers.image.title="Meldgrove Logbuch" \
+      org.opencontainers.image.description="A self-hosted log of an organization's decisions, updates, and learnings, with a consent-based decision process." \
+      org.opencontainers.image.source="https://github.com/meldgrove/logbuch" \
+      org.opencontainers.image.licenses="Apache-2.0"
 ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0 \
