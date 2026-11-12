@@ -1,0 +1,67 @@
+# Weekly version updates, one pull request per group. Security updates
+# ignore the schedule and the cooldown. CONTRIBUTING.md lists the versions
+# Dependabot cannot update.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    # Let new releases settle before they are proposed.
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      npm-minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    ignore:
+      # The types follow the Node.js major (engines in package.json).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore
+      include: scope
+    ignore:
+      # A new Node.js major goes together with engines in package.json.
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      compose-minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    ignore:
+      # Logbuch needs PostgreSQL 18; a new major also needs a data upgrade.
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]

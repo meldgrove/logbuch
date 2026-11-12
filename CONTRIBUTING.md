@@ -57,6 +57,19 @@ recorded, and why nothing is deleted. In short:
 - Never commit secrets, real personal data, or data from a real organization,
   also not in tests and fixtures. Use `example.org` addresses.
 
+## Dependency updates
+
+Dependabot (`.github/dependabot.yml`) opens weekly pull requests for npm,
+GitHub Actions, the Docker base image, and the Compose images. Minor and
+patch updates come grouped; a major update comes alone and may need code
+changes. Two versions it cannot see; update them by hand in the same pull
+request:
+
+- `NODE_VERSION` in `.github/workflows/ci.yml`, with the `node` image in the
+  `Dockerfile`.
+- The Keycloak image in `.github/workflows/ci.yml`, with the one in
+  `compose.dev.yaml`.
+
 ## Security
 
 Please report vulnerabilities privately; see [SECURITY.md](SECURITY.md).
