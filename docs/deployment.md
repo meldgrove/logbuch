@@ -3,7 +3,9 @@
 Logbuch ships as one Docker image, `ghcr.io/meldgrove/logbuch`, for
 linux/amd64 and linux/arm64. Each [release](https://github.com/meldgrove/logbuch/releases)
 is tagged with its version (`0.1.0`) and its minor version (`0.1`, which moves
-to the newest patch release); `latest` is the newest release. Run a fixed
+to the newest patch release), from 1.0.0 also its major version (`1`);
+`latest` is the newest release. Release candidates (`0.2.0-rc.1`) are for
+testing and get only their own tag. Run a fixed
 version and upgrade on purpose: a new release can bring database migrations
 and new settings, which its release notes name. The image's command selects
 the process:
@@ -95,7 +97,7 @@ docker compose up -d
 
 | Endpoint | Meaning |
 |---|---|
-| `GET /-/healthz` | Liveness: the process answers. No dependency checks |
+| `GET /-/healthz` | Liveness: the process answers, with the release version (`null` for images built from source). No dependency checks |
 | `GET /-/readyz` | Readiness: the database answers and every migration of this build is applied. 503 otherwise |
 
 The worker writes a heartbeat file every 30 seconds;

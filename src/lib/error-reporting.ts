@@ -34,14 +34,15 @@ function redactEvent(event: ErrorEvent): ErrorEvent {
  * Options for `Sentry.init` in the web process and the worker, or `undefined`
  * while error reporting is off. Errors only, without personal data: no
  * tracing, no user, cookies, headers, bodies, query strings, local variables,
- * or breadcrumbs (they repeat console output and outgoing URLs).
+ * or breadcrumbs (they repeat console output and outgoing URLs). The release
+ * is SENTRY_RELEASE, else `logbuch@<APP_VERSION>` in release images.
  */
 export function sentryOptions(config: ErrorReportingConfig, service: "web" | "worker"): NodeOptions | undefined {
   if (!config.SENTRY_DSN) return undefined;
   return {
     dsn: config.SENTRY_DSN,
     environment: config.SENTRY_ENVIRONMENT,
-    release: config.SENTRY_RELEASE,
+    release: config.SENTRY_RELEASE ?? (config.APP_VERSION ? `logbuch@${config.APP_VERSION}` : undefined),
     initialScope: { tags: { service } },
     maxBreadcrumbs: 0,
     dataCollection: {

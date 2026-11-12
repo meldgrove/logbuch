@@ -1,5 +1,6 @@
 import type { ErrorEvent } from "@sentry/node";
 import { describe, expect, it } from "vitest";
+import { parseErrorReportingConfig } from "./config";
 import { asError, sentryOptions, withoutQueryParameters } from "./error-reporting";
 
 const dsn = "https://key@o1.ingest.example.org/2";
@@ -28,6 +29,15 @@ describe("sentryOptions", () => {
       },
     });
     expect(options?.tracesSampleRate).toBeUndefined();
+  });
+
+  it("names the release after APP_VERSION unless SENTRY_RELEASE is set", () => {
+    expect(sentryOptions({ SENTRY_DSN: dsn, APP_VERSION: "1.2.3" }, "web")?.release).toBe("logbuch@1.2.3");
+    expect(sentryOptions({ SENTRY_DSN: dsn, APP_VERSION: "1.2.3", SENTRY_RELEASE: "abc123" }, "web")?.release).toBe("abc123");
+    expect(sentryOptions({ SENTRY_DSN: dsn }, "web")?.release).toBeUndefined();
+    // Compose passes an unset SENTRY_RELEASE as "".
+    const config = parseErrorReportingConfig({ SENTRY_DSN: dsn, SENTRY_RELEASE: "", APP_VERSION: "1.2.3" });
+    expect(sentryOptions(config, "web")?.release).toBe("logbuch@1.2.3");
   });
 
   it("removes query values from database errors before sending", () => {

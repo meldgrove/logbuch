@@ -5,6 +5,7 @@ import {
   parseDirectoryConfig,
   parseErrorReportingConfig,
   parseNotificationConfig,
+  parseVersionConfig,
   parseWebhookConfig,
   validateWebConfig,
   validateWorkerConfig,
@@ -185,6 +186,13 @@ describe("parseWebhookConfig", () => {
     expect(parseWebhookConfig({ WEBHOOK_URL: "https://hooks.example.org/logbuch", WEBHOOK_SECRET: "s".repeat(32) }).WEBHOOK_URL).toBe(
       "https://hooks.example.org/logbuch",
     );
+  });
+});
+
+describe("parseVersionConfig", () => {
+  it("has no version in images built from source", () => {
+    expect(parseVersionConfig({ APP_VERSION: "" }).APP_VERSION).toBeUndefined();
+    expect(parseVersionConfig({ APP_VERSION: "0.2.0" }).APP_VERSION).toBe("0.2.0");
   });
 });
 

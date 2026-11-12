@@ -72,33 +72,83 @@ request:
 
 ## Releases
 
-Maintainers publish a release by pushing a version tag. The `Release` workflow
-then publishes the image `ghcr.io/meldgrove/logbuch` for amd64 and arm64,
-attests where it was built, and creates the GitHub release.
+A release bundles everything merged to `main` since the previous one.
+Maintainers start it by hand; nothing is released on merge.
 
-1. Set the new version in a pull request:
-   `npm version 0.2.0 --no-git-tag-version` changes `package.json` and
-   `package-lock.json`.
-2. After the merge, tag that commit on `main`. The tag must match the version
-   in `package.json`:
+**Version numbers** follow Semantic Versioning, judged by what admins must do
+to upgrade:
 
-   ```sh
-   git switch main && git pull
-   git tag -a v0.2.0 -m "v0.2.0"
-   git push origin v0.2.0
-   ```
+- **Major:** the upgrade needs admin action, for example a new required
+  setting, a changed requirement (PostgreSQL, identity provider), or a
+  migration with manual steps.
+- **Minor:** new features, and migrations that need no admin action.
+- **Patch:** fixes and dependency updates.
 
-3. When the workflow is done, edit the release notes: name new migrations,
-   new or changed settings, and anything admins must do when they upgrade.
+Before 1.0.0, a minor release may also need admin action.
 
-A tag with a suffix, such as `v0.2.0-rc.1`, publishes a prerelease for testing.
-It only gets its own image tag, never `latest`.
+**Release notes** come from the titles of the merged pull requests, so write
+titles as release-note lines. Label a pull request `breaking` when admins
+must act on upgrade, and describe the steps in it: the notes list it first,
+under "Upgrade steps needed". Dependabot's pull requests (`dependencies`)
+come last (`.github/release.yml`).
 
-The GitHub Container Registry creates a new package as private. After the
-first release, an organization owner makes it public once: on the package page
-(https://github.com/orgs/meldgrove/packages/container/package/logbuch),
-**Package settings** → **Change visibility** → **Public**. Then check that
-`docker pull ghcr.io/meldgrove/logbuch:<version>` works without logging in.
+### Cut a release
+
+1. Wait for CI to pass on the latest `main` commit.
+2. Open **Actions → Release → Run workflow**, choose patch, minor or major,
+   and tick **Dry run**. It builds and starts the image on amd64 and arm64
+   and shows the version, image tags, and notes, without publishing.
+3. Run it again without **Dry run**.
+4. When the release needs admin action, edit its notes on GitHub and put the
+   steps at the top.
+
+The `Release` workflow (`.github/workflows/release.yml`) stops without
+changes when it was not started from `main`, when CI has not passed for that
+commit, when nothing changed since the last release, or when `package.json`
+does not hold the version of the latest release. Otherwise it:
+
+- raises the version in `package.json` and `package-lock.json`, commits
+  `chore(release): vX.Y.Z`, tags it, and pushes both together. If `main`
+  moved during the run, neither lands; start it again. The first release
+  keeps the version already in `package.json`.
+- publishes the image `ghcr.io/meldgrove/logbuch` for amd64 and arm64 as
+  `X.Y.Z`, `X.Y`, from 1.0.0 also `X`, and `latest`;
+- attests where the image was built and creates the GitHub Release.
+
+If a job fails after the tag was pushed, fix the cause and use **Re-run
+failed jobs**: it publishes from the tag. Do not start a new release for the
+same changes.
+
+**Release candidates:** tick **Release candidate** to publish
+`X.Y.Z-rc.N` for testing on a staging server. It tags the current commit
+without changing `package.json`, publishes only that image tag (never
+`latest`), and marks the GitHub Release as a prerelease. Release with the same
+choice of patch, minor or major afterwards.
+
+Pull requests that change the `Dockerfile`, `.dockerignore`,
+`docker-entrypoint.sh`, or the workflow build and start both images without
+publishing. Release images set `APP_VERSION`: `/-/healthz` reports it, and
+Sentry names the release `logbuch@X.Y.Z` unless `SENTRY_RELEASE` is set.
+
+### Repository settings
+
+- **Package visibility:** the GitHub Container Registry creates a new package
+  as private. After the first release, an organization owner makes it public
+  once: on the package page
+  (https://github.com/orgs/meldgrove/packages/container/package/logbuch),
+  **Package settings** → **Change visibility** → **Public**. Then check that
+  `docker pull ghcr.io/meldgrove/logbuch:<version>` works without logging in.
+- **Immutable releases** are on: a published release's tag can never move or
+  be deleted, while its notes stay editable. Fix a bad release with a new
+  patch release.
+- **Protected `main`:** the workflow pushes the version commit straight to
+  `main` with its own token. Once a ruleset requires pull requests on `main`,
+  give that push to a GitHub App that may bypass the ruleset: create an app
+  owned by the organization, without a webhook, with the repository
+  permission Contents: Read and write, and install it on this repository
+  only. Add it as a bypass actor to the rulesets for `main` and `v*` tags.
+  Set the repository variable `RELEASE_APP_CLIENT_ID` to its client ID and
+  the secret `RELEASE_APP_PRIVATE_KEY` to a private key of the app.
 
 ## Security
 
