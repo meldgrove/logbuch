@@ -105,10 +105,13 @@ come last (`.github/release.yml`).
 2. Open **Actions → Release → Run workflow**, choose patch, minor or major,
    and tick **Dry run**. It builds and starts the image on amd64 and arm64
    and shows the version, image tags, and notes, without publishing.
-3. Run it again without **Dry run**. When the release needs admin action,
-   untick **Deploy** and deploy by hand after taking the steps.
+3. Run it again without **Dry run**.
 4. When the release needs admin action, edit its notes on GitHub and put the
    steps at the top.
+
+Servers that let the updater follow `latest` install a release within the
+hour (docs/deployment.md, Automatic updates). Before releasing changes that
+need admin action, make sure their steps are ready for the notes.
 
 The `Release` workflow (`.github/workflows/release.yml`) stops without
 changes when it was not started from `main`, when CI has not passed for that
@@ -119,9 +122,7 @@ commit, or when nothing changed since the last release. Otherwise it:
   0.1.0;
 - publishes the image `ghcr.io/meldgrove/logbuch` for amd64 and arm64 as
   `X.Y.Z`, `X.Y`, from 1.0.0 also `X`, and `latest`;
-- attests where the image was built and creates the GitHub Release;
-- deploys the release to the maintainers' server, if the repository has a
-  deploy link (below).
+- attests where the image was built and creates the GitHub Release.
 
 If a job fails after the tag was pushed, fix the cause and use **Re-run
 failed jobs**: it publishes from the tag. Do not start a new release for the
@@ -129,29 +130,13 @@ same changes.
 
 **Release candidates:** tick **Release candidate** to publish
 `X.Y.Z-rc.N` for testing on a staging server. It publishes only that image
-tag (never `latest`), marks the GitHub Release as a prerelease, and deploys
-nothing. Release with the same choice of patch, minor or major afterwards.
+tag (never `latest`) and marks the GitHub Release as a prerelease. Release
+with the same choice of patch, minor or major afterwards.
 
 Pull requests that change the `Dockerfile`, `.dockerignore`,
 `docker-entrypoint.sh`, or the workflow build and start both images without
 publishing. Release images set `APP_VERSION`: `/-/healthz` reports it, and
 Sentry names the release `logbuch@X.Y.Z` unless `SENTRY_RELEASE` is set.
-
-### Deploy after a release
-
-The maintainers' server can install every release as soon as it is out. It
-runs the image tag `latest` (`LOGBUCH_VERSION=latest`), and the repository has
-two Actions secrets:
-
-- `DEPLOY_HOOK_URL`: a link that redeploys the app on `POST`. In Coolify,
-  the resource's **Webhooks** → **Deploy Webhook**.
-- `DEPLOY_HOOK_TOKEN`: its bearer token. In Coolify, an API token with only
-  the `deploy` permission.
-
-The **Deploy** job calls the link once the release is published; without
-`DEPLOY_HOOK_URL` it does nothing. GitHub's runners must reach the link over
-the internet. If the call fails, the release is still out: fix the cause and
-use **Re-run failed jobs**, or deploy by hand.
 
 ### Repository settings
 

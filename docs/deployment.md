@@ -5,8 +5,9 @@ linux/amd64 and linux/arm64. Each [release](https://github.com/meldgrove/logbuch
 is tagged with its version (`0.1.0`) and its minor version (`0.1`, which moves
 to the newest patch release), from 1.0.0 also its major version (`1`);
 `latest` is the newest release. Release candidates (`0.2.0-rc.1`) are for
-testing and get only their own tag. Run a fixed
-version and upgrade on purpose: a new release can bring database migrations
+testing and get only their own tag. Run a fixed version and upgrade on
+purpose, or let the updater install new releases ([automatic
+updates](#automatic-updates)): a new release can bring database migrations
 and new settings, which its release notes name. The image's command selects
 the process:
 
@@ -117,6 +118,32 @@ admin page shows the worker's last heartbeat.
   `LOGBUCH_VERSION` to the new release, and run `docker compose up -d`.
   `migrate` applies new migrations before `web` and `worker` start. Back up
   the database first: migrations only move forward.
+
+## Automatic updates
+
+`compose.yaml` includes the `updater` service of
+[Meldgrove Updater](https://github.com/meldgrove/updater). Once an hour it
+checks whether the tag in `LOGBUCH_VERSION` points to a new image. If so, it
+calls the deploy link of the platform, which pulls the image and restarts
+Logbuch, `migrate` first. Until `UPDATE_DEPLOY_HOOK_URL` is set, it does
+nothing.
+
+1. Set `LOGBUCH_VERSION` to a tag that moves:
+   - a minor version such as `0.2`: its patch releases, which never need
+     manual steps;
+   - `latest`: every release. A release with upgrade steps then installs
+     before anyone has taken them; watch the releases on GitHub (Watch →
+     Custom → Releases) and take the steps right away.
+2. Schedule database backups: migrations run without anyone watching.
+3. Set `UPDATE_DEPLOY_HOOK_URL` to the platform's deploy link, which must
+   redeploy on `POST`, and `UPDATE_DEPLOY_HOOK_TOKEN` to its bearer token if
+   it needs one. For Coolify, the updater's
+   [README](https://github.com/meldgrove/updater#coolify) shows where to find
+   both.
+4. Deploy once. The `updater` log then says which tag it watches.
+
+Without a platform, leave the deploy link empty and let cron run
+`docker compose up --detach --pull always --quiet-pull` every hour instead.
 
 ## Importing old entries from a CSV file
 

@@ -6,7 +6,8 @@
 #
 # LOGBUCH_VERSION in .env selects the release of ghcr.io/meldgrove/logbuch,
 # e.g. 0.1.0. To upgrade, read the release notes, change it, and run
-# `docker compose up -d` again.
+# `docker compose up -d` again. A tag that moves (0.1, latest) lets `updater`
+# install new releases (docs/deployment.md, Automatic updates).
 #
 # Without a PostgreSQL of your own, add compose.postgres.yaml: it runs one
 # next to Logbuch (docs/deployment.md).
@@ -102,3 +103,14 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+
+  # Automatic updates (docs/deployment.md): off until UPDATE_DEPLOY_HOOK_URL
+  # is set. When the tag in LOGBUCH_VERSION points to a new image, it calls
+  # that deploy link, and the platform deploys the new release.
+  updater:
+    image: ghcr.io/meldgrove/updater:0.1
+    restart: unless-stopped
+    environment:
+      IMAGE: *image
+      DEPLOY_HOOK_URL: ${UPDATE_DEPLOY_HOOK_URL:-}
+      DEPLOY_HOOK_TOKEN: ${UPDATE_DEPLOY_HOOK_TOKEN:-}
