@@ -70,6 +70,36 @@ request:
 - The Keycloak image in `.github/workflows/ci.yml`, with the one in
   `compose.dev.yaml`.
 
+## Releases
+
+Maintainers publish a release by pushing a version tag. The `Release` workflow
+then publishes the image `ghcr.io/meldgrove/logbuch` for amd64 and arm64,
+attests where it was built, and creates the GitHub release.
+
+1. Set the new version in a pull request:
+   `npm version 0.2.0 --no-git-tag-version` changes `package.json` and
+   `package-lock.json`.
+2. After the merge, tag that commit on `main`. The tag must match the version
+   in `package.json`:
+
+   ```sh
+   git switch main && git pull
+   git tag -a v0.2.0 -m "v0.2.0"
+   git push origin v0.2.0
+   ```
+
+3. When the workflow is done, edit the release notes: name new migrations,
+   new or changed settings, and anything admins must do when they upgrade.
+
+A tag with a suffix, such as `v0.2.0-rc.1`, publishes a prerelease for testing.
+It only gets its own image tag, never `latest`.
+
+The GitHub Container Registry creates a new package as private. After the
+first release, an organization owner makes it public once: on the package page
+(https://github.com/orgs/meldgrove/packages/container/package/logbuch),
+**Package settings** → **Change visibility** → **Public**. Then check that
+`docker pull ghcr.io/meldgrove/logbuch:<version>` works without logging in.
+
 ## Security
 
 Please report vulnerabilities privately; see [SECURITY.md](SECURITY.md).

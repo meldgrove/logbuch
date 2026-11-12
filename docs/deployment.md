@@ -1,6 +1,12 @@
 # Deployment
 
-Logbuch ships as one Docker image. Its command selects the process:
+Logbuch ships as one Docker image, `ghcr.io/meldgrove/logbuch`, for
+linux/amd64 and linux/arm64. Each [release](https://github.com/meldgrove/logbuch/releases)
+is tagged with its version (`0.1.0`) and its minor version (`0.1`, which moves
+to the newest patch release); `latest` is the newest release. Run a fixed
+version and upgrade on purpose: a new release can bring database migrations
+and new settings, which its release notes name. The image's command selects
+the process:
 
 | Command | What it does |
 |---|---|
@@ -15,16 +21,22 @@ the `pgboss` schema of the same database.
 ## Docker Compose
 
 [`compose.yaml`](../compose.yaml) runs `migrate`, `web`, and `worker`
-against the PostgreSQL in `DATABASE_URL`:
+against the PostgreSQL in `DATABASE_URL`. Take it from the release you deploy,
+together with `.env.example` as the start of your `.env`:
 
 ```sh
-cp .env.example .env
+version=0.1.0   # the release to deploy
+curl -fsSLO "https://raw.githubusercontent.com/meldgrove/logbuch/v$version/compose.yaml"
+curl -fsSL -o .env "https://raw.githubusercontent.com/meldgrove/logbuch/v$version/.env.example"
 # Edit .env with the production values (docs/configuration.md): at least
 # DATABASE_URL, LOGBUCH_BASE_URL, BETTER_AUTH_SECRET, the OIDC_* variables,
 # and DIRECTORY with its settings. Remove NOTIFICATION_TRANSPORT (production
-# sends for real).
-docker compose up -d --build
+# sends for real). Add the release:
+#   LOGBUCH_VERSION=0.1.0
+docker compose up -d
 ```
+
+`LOGBUCH_VERSION` is required: Compose stops with a message without it.
 
 On a platform that runs Compose files, create the PostgreSQL there and set
 `DATABASE_URL` to its internal URL. Some platforms start each Compose project
@@ -44,8 +56,8 @@ Set `TZ` to your organization's time zone (default UTC): deadlines end at
 ### PostgreSQL next to Logbuch
 
 On a server without a PostgreSQL of its own,
-[`compose.postgres.yaml`](../compose.postgres.yaml) adds one to the Compose
-project and keeps its data in the `postgres-data` volume. Set these values in
+[`compose.postgres.yaml`](../compose.postgres.yaml) (from the same release)
+adds one to the Compose project and keeps its data in the `postgres-data` volume. Set these values in
 `.env`; `COMPOSE_FILE` makes every `docker compose` command use both files:
 
 ```sh
@@ -57,6 +69,27 @@ DATABASE_URL=postgres://logbuch:<password>@postgres:5432/logbuch
 
 PostgreSQL takes the password once, when it creates the database at the first
 start. Changing `POSTGRES_PASSWORD` later does not change it.
+
+### Checking the image
+
+Every release image carries a provenance attestation, signed by GitHub, that
+names the commit and the workflow run it was built from. With the
+[GitHub CLI](https://cli.github.com):
+
+```sh
+gh attestation verify oci://ghcr.io/meldgrove/logbuch:0.1.0 --repo meldgrove/logbuch
+```
+
+### Building the image yourself
+
+To run your own build, for example of a change that is not released yet, build
+the image from a clone of the repository and give it a version of its own:
+
+```sh
+docker build -t ghcr.io/meldgrove/logbuch:local .
+# In .env: LOGBUCH_VERSION=local
+docker compose up -d
+```
 
 ## Health checks
 
@@ -78,8 +111,10 @@ admin page shows the worker's last heartbeat.
 - **Admin page** (`/admin`): directory sync status, notification channels and
   failures, webhook deliveries, and the default periods of the decision
   process.
-- **Upgrades**: deploy the new image; `migrate` applies new migrations before
-  `web` and `worker` start.
+- **Upgrades**: read the release notes of every release since yours, set
+  `LOGBUCH_VERSION` to the new release, and run `docker compose up -d`.
+  `migrate` applies new migrations before `web` and `worker` start. Back up
+  the database first: migrations only move forward.
 
 ## Importing old entries from a CSV file
 
