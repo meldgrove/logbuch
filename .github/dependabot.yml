@@ -57,6 +57,10 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    groups:
+      compose-minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
     ignore:
       # Logbuch needs PostgreSQL 18; a new major also needs a data upgrade.
       - dependency-name: postgres
