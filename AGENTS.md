@@ -148,10 +148,12 @@ migration check, build, `npm audit`, integration tests, end-to-end tests,
 and a Docker build. Use only GitHub-owned actions, pinned by commit SHA: the
 repository's Actions settings enforce both, so a workflow with any other
 action does not start. Use tools such as Docker through their command line
-instead. A tag `vX.Y.Z` that matches `package.json` runs
-`.github/workflows/release.yml`: it publishes the image
-`ghcr.io/meldgrove/logbuch` for amd64 and arm64 and a GitHub release
-(`CONTRIBUTING.md` has the steps). Dependabot (`.github/dependabot.yml`)
+instead. Maintainers release by hand with `.github/workflows/release.yml`
+(Actions → Release → Run workflow): it raises the version in `package.json`,
+tags it, and publishes the image `ghcr.io/meldgrove/logbuch` for amd64 and
+arm64 and a GitHub release (`CONTRIBUTING.md` has the steps). Release notes
+come from pull request titles; label a pull request `breaking` when admins
+must act on upgrade. Dependabot (`.github/dependabot.yml`)
 proposes updates weekly.
 
 <!-- BEGIN:nextjs-agent-rules -->
