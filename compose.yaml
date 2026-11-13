@@ -7,8 +7,9 @@
 # LOGBUCH_VERSION in .env selects the release of ghcr.io/meldgrove/logbuch,
 # e.g. 0.1.0. To upgrade, read the release notes, change it, and run
 # `docker compose up -d` again. A tag that moves (0.1, latest) lets `updater`
-# install new releases (docs/deployment.md, Automatic updates). Every start
-# pulls the images again, so a moved tag brings its newest release.
+# install new releases (docs/deployment.md, Automatic updates). On a
+# platform that does not pull images when it deploys, PULL_POLICY=always
+# makes every start pull them again.
 #
 # Without a PostgreSQL of your own, add compose.postgres.yaml: it runs one
 # next to Logbuch (docs/deployment.md).
@@ -50,7 +51,7 @@ x-error-reporting-environment: &error-reporting-environment
 services:
   migrate:
     image: *image
-    pull_policy: always
+    pull_policy: ${PULL_POLICY:-missing}
     command: ["migrate"]
     restart: "no"
     environment:
@@ -58,7 +59,7 @@ services:
 
   web:
     image: *image
-    pull_policy: always
+    pull_policy: ${PULL_POLICY:-missing}
     command: ["web"]
     restart: unless-stopped
     depends_on:
@@ -85,7 +86,7 @@ services:
 
   worker:
     image: *image
-    pull_policy: always
+    pull_policy: ${PULL_POLICY:-missing}
     command: ["worker"]
     restart: unless-stopped
     depends_on:
@@ -115,7 +116,7 @@ services:
   # that deploy link, and the platform deploys the new release.
   updater:
     image: ghcr.io/meldgrove/updater:0.1
-    pull_policy: always
+    pull_policy: ${PULL_POLICY:-missing}
     restart: unless-stopped
     environment:
       IMAGE: *image

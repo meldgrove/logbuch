@@ -94,11 +94,8 @@ the image from a clone of the repository and give it a version of its own:
 ```sh
 docker build -t ghcr.io/meldgrove/logbuch:local .
 # In .env: LOGBUCH_VERSION=local
-docker compose up -d --pull never
+docker compose up -d
 ```
-
-`compose.yaml` pulls its images on every start; `--pull never` keeps the
-image built here.
 
 ## Health checks
 
@@ -151,6 +148,13 @@ nothing.
    [README](https://github.com/meldgrove/updater#coolify) shows where to find
    both.
 4. Deploy once. The `updater` log then says which tag it watches.
+
+A deployment must pull the image again, or it starts the old one. Coolify
+pulls by itself. If the platform only starts the Compose file, set
+`PULL_POLICY=always`: Docker Compose then pulls the images on every start, so
+every `docker compose up` or `run` also brings the newest release of the tag.
+After the first automatic update, check that it arrived: `/-/healthz` reports
+the version.
 
 A release installs three days after it came out, so that a faulty one can be
 replaced before it reaches the server. `UPDATE_COOLDOWN` changes the time:
