@@ -77,21 +77,25 @@ Maintainers start it by hand; nothing is released on merge. A release is a
 `vX.Y.Z` tag on a `main` commit that passed CI. No file holds the version
 (`package.json` stays at `0.0.0`), and releasing pushes nothing to `main`.
 
-**Version numbers** follow Semantic Versioning. Choose the smallest part that
-fits the largest change:
+**Version numbers** say whether a release installs without anyone acting.
+While the version is below 1.0.0:
 
-- **Patch** (the default): fixes, dependency and base image updates, security
-  fixes, and small changes to the interface or texts.
-- **Minor:** anything new for users or admins (features, settings,
-  integrations), database migrations, and changes admins must act on, for
-  example a new required setting or a changed requirement (PostgreSQL,
-  identity provider). The release notes say what to do.
-- **Major:** rare, only for a really big update: a rewrite, a new architecture
-  or deployment model, or the removal of a major feature. 1.0.0 is the
-  maintainers' deliberate decision.
+- **Patch** (the default): everything that admins need not act on. Fixes,
+  dependency and base image updates, and also new features, settings, and
+  database migrations that run on their own.
+- **Minor:** only when admins must act on upgrade, for example a new required
+  setting, a changed requirement (PostgreSQL, identity provider), or a manual
+  step. Label the pull request `breaking`; the release notes say what to do.
+- **Major:** 1.0.0 is the maintainers' deliberate decision.
 
-A minor version tag such as `0.1` therefore only receives patch releases,
-which never need admin action.
+From 1.0.0, a release that admins must act on is a major version, new
+features are minor versions, and fixes are patches.
+
+A release that needs action therefore starts a new series, and a series tag
+such as `0.1` (from 1.0.0 the major version, `1`) receives every release that
+needs none: servers that follow it stay current. The workflow refuses a
+smaller version when a pull request merged since the last release is labelled
+`breaking`.
 
 **Release notes** come from the titles of the merged pull requests, so write
 titles as release-note lines. Label a pull request `breaking` when admins
@@ -109,20 +113,28 @@ come last (`.github/release.yml`).
 4. When the release needs admin action, edit its notes on GitHub and put the
    steps at the top.
 
-Servers that let the updater follow `latest` install a release within the
-hour (docs/deployment.md, Automatic updates). Before releasing changes that
+Servers that let the updater follow a series or `latest` install a release
+once its cooldown is over, three days unless the server sets another
+(docs/deployment.md, Automatic updates). Before releasing changes that
 need admin action, make sure their steps are ready for the notes.
 
-The `Release` workflow (`.github/workflows/release.yml`) stops without
-changes when it was not started from `main`, when CI has not passed for that
-commit, or when nothing changed since the last release. Otherwise it:
+The `Release` workflow (`.github/workflows/release.yml`) calls the workflow
+that every Meldgrove project shares
+([meldgrove/.github](https://github.com/meldgrove/.github#release-workflow)).
+It stops without changes when it was not started from `main`, when CI has not
+passed for that commit, when nothing changed since the last release, or when
+the chosen version is too small for a pull request labelled `breaking`.
+Otherwise it:
 
 - raises the latest `vX.Y.Z` tag by the chosen part, tags the commit, and
   pushes only the tag. The first release starts from 0.0.0, so minor makes it
   0.1.0;
 - publishes the image `ghcr.io/meldgrove/logbuch` for amd64 and arm64 as
   `X.Y.Z`, `X.Y`, from 1.0.0 also `X`, and `latest`;
-- attests where the image was built and creates the GitHub Release.
+- attests where the image was built and creates the GitHub Release;
+- moves the branch `stable` to the released commit. Platforms that read
+  `compose.yaml` from the repository follow `stable`, so the file they run
+  belongs to the newest release.
 
 If a job fails after the tag was pushed, fix the cause and use **Re-run
 failed jobs**: it publishes from the tag. Do not start a new release for the

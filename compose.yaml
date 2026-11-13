@@ -7,7 +7,8 @@
 # LOGBUCH_VERSION in .env selects the release of ghcr.io/meldgrove/logbuch,
 # e.g. 0.1.0. To upgrade, read the release notes, change it, and run
 # `docker compose up -d` again. A tag that moves (0.1, latest) lets `updater`
-# install new releases (docs/deployment.md, Automatic updates).
+# install new releases (docs/deployment.md, Automatic updates). Every start
+# pulls the images again, so a moved tag brings its newest release.
 #
 # Without a PostgreSQL of your own, add compose.postgres.yaml: it runs one
 # next to Logbuch (docs/deployment.md).
@@ -15,7 +16,9 @@
 # Put a TLS-terminating reverse proxy in front of `web` (port 3000) and set
 # LOGBUCH_BASE_URL to its public URL. `migrate` runs once before `web` and
 # `worker` start. Platforms that run Compose files can use this file as it
-# is; set the variables in their environment view.
+# is; set the variables in their environment view. A platform that reads the
+# file from the repository follows the branch `stable`, which is at the
+# newest release; `main` has unreleased changes.
 # Local development uses compose.dev.yaml.
 
 x-image: &image ghcr.io/meldgrove/logbuch:${LOGBUCH_VERSION:?set LOGBUCH_VERSION in .env to a release, e.g. 0.1.0}
@@ -47,6 +50,7 @@ x-error-reporting-environment: &error-reporting-environment
 services:
   migrate:
     image: *image
+    pull_policy: always
     command: ["migrate"]
     restart: "no"
     environment:
@@ -54,6 +58,7 @@ services:
 
   web:
     image: *image
+    pull_policy: always
     command: ["web"]
     restart: unless-stopped
     depends_on:
@@ -80,6 +85,7 @@ services:
 
   worker:
     image: *image
+    pull_policy: always
     command: ["worker"]
     restart: unless-stopped
     depends_on:
@@ -109,8 +115,14 @@ services:
   # that deploy link, and the platform deploys the new release.
   updater:
     image: ghcr.io/meldgrove/updater:0.1
+    pull_policy: always
     restart: unless-stopped
     environment:
       IMAGE: *image
       DEPLOY_HOOK_URL: ${UPDATE_DEPLOY_HOOK_URL:-}
       DEPLOY_HOOK_TOKEN: ${UPDATE_DEPLOY_HOOK_TOKEN:-}
+      # A release installs once it has been out this long, and only inside
+      # the window, if one is set (e.g. 02:00-05:00, in the time zone TZ).
+      COOLDOWN: ${UPDATE_COOLDOWN:-3d}
+      WINDOW: ${UPDATE_WINDOW:-}
+      TZ: ${TZ:-UTC}
