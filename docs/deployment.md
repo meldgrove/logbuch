@@ -2,14 +2,14 @@
 
 Logbuch ships as one Docker image, `ghcr.io/meldgrove/logbuch`, for
 linux/amd64 and linux/arm64. Each [release](https://github.com/meldgrove/logbuch/releases)
-is tagged with its version (`0.1.0`) and its minor version (`0.1`, which moves
-to the newest patch release), from 1.0.0 also its major version (`1`);
-`latest` is the newest release. Release candidates (`0.2.0-rc.1`) are for
-testing and get only their own tag. Run a fixed version and upgrade on
-purpose, or let the updater install new releases ([automatic
-updates](#automatic-updates)): a new release can bring database migrations
-and new settings, which its release notes name. The image's command selects
-the process:
+is tagged with its version (`0.1.0`) and its series (`0.1`, which moves to
+every later release of the series; from 1.0.0 the series is the major
+version, `1`); `latest` is the newest release. A release that needs manual
+steps starts a new series, so the releases within a series install without
+anyone acting. Release candidates (`0.2.0-rc.1`) are for testing and get only
+their own tag. Run a fixed version and upgrade on purpose, or let the updater
+install new releases ([automatic updates](#automatic-updates)). The image's
+command selects the process:
 
 | Command | What it does |
 |---|---|
@@ -47,7 +47,9 @@ in a network of its own, where that host name does not resolve (`migrate` logs
 `getaddrinfo EAI_AGAIN` and fails after a minute): connect the application to
 the network the database is in. Platforms that pass their one Compose file
 with `-f` override `COMPOSE_FILE`, so `compose.postgres.yaml` does not work
-there.
+there. A platform that reads `compose.yaml` from this repository should
+follow the branch `stable`, which is at the newest release; `main` has
+changes that are not released yet.
 
 Put a reverse proxy that terminates TLS in front of `web` and use its public
 URL as `LOGBUCH_BASE_URL`. Use exactly that URL: login redirects and links in
@@ -80,7 +82,8 @@ names the commit and the workflow run it was built from. With the
 [GitHub CLI](https://cli.github.com):
 
 ```sh
-gh attestation verify oci://ghcr.io/meldgrove/logbuch:0.1.0 --repo meldgrove/logbuch
+gh attestation verify oci://ghcr.io/meldgrove/logbuch:0.1.0 \
+  --repo meldgrove/logbuch --signer-repo meldgrove/.github
 ```
 
 ### Building the image yourself
@@ -115,9 +118,10 @@ admin page shows the worker's last heartbeat.
   failures, webhook deliveries, and the default periods of the decision
   process.
 - **Upgrades**: read the release notes of every release since yours, set
-  `LOGBUCH_VERSION` to the new release, and run `docker compose up -d`.
-  `migrate` applies new migrations before `web` and `worker` start. Back up
-  the database first: migrations only move forward.
+  `LOGBUCH_VERSION` to the new release, and run `docker compose up -d`. For a
+  new series, take its `compose.yaml` too. `migrate` applies new migrations
+  before `web` and `worker` start. Back up the database first: migrations
+  only move forward.
 
 ## Automatic updates
 
@@ -129,8 +133,11 @@ Logbuch, `migrate` first. Until `UPDATE_DEPLOY_HOOK_URL` is set, it does
 nothing.
 
 1. Set `LOGBUCH_VERSION` to a tag that moves:
-   - a minor version such as `0.2`: its patch releases, which never need
-     manual steps;
+   - a series such as `0.2` (from 1.0.0 the major version, such as `1`):
+     every release of that series, with its features and fixes. None of them
+     needs manual steps. A release that does starts the next series: the
+     `updater` log then names it, and moving to it is an
+     [upgrade](#operations) by hand;
    - `latest`: every release. A release with upgrade steps then installs
      before anyone has taken them; watch the releases on GitHub (Watch →
      Custom → Releases) and take the steps right away.
@@ -141,6 +148,20 @@ nothing.
    [README](https://github.com/meldgrove/updater#coolify) shows where to find
    both.
 4. Deploy once. The `updater` log then says which tag it watches.
+
+A deployment must pull the image again, or it starts the old one. Coolify
+pulls by itself. If the platform only starts the Compose file, set
+`PULL_POLICY=always`: Docker Compose then pulls the images on every start, so
+every `docker compose up` or `run` also brings the newest release of the tag.
+After the first automatic update, check that it arrived: `/-/healthz` reports
+the version.
+
+A release installs three days after it came out, so that a faulty one can be
+replaced before it reaches the server. `UPDATE_COOLDOWN` changes the time:
+`0` installs within the hour, `7d` waits a week. Security fixes wait as well;
+deploy by hand to install a release at once. Most platforms stop Logbuch for
+a moment while they deploy: `UPDATE_WINDOW`, such as `02:00-05:00` in the
+time zone `TZ`, keeps that out of working hours.
 
 Without a platform, leave the deploy link empty and let cron run
 `docker compose up --detach --pull always --quiet-pull` every hour instead.
